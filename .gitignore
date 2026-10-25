@@ -1,0 +1,33 @@
+__pycache__/
+*.pyc
+.venv*/
+build/
+dist/
+*.spec.bak
+*.egg-info/
+.pytest_cache/
+# generated outputs
+converted/
+*_block.geojson
+*_block.kml
+*_georef.tif
+*_debug.png
+_index_blocks.geojson
+_report.csv
+run.log
+demo_in/
+demo_out/
+samples/*_tmp.pdf
+samples/*.png
+installer_output/
+chamber-*/
+*.whl
+*.tar.gz
+
+
+# local test runs (may contain real sheets - never commit)
+test_run/
+test_run_in/
+
+# your private sheet profile - never commit (see sheet_profile.example.json)
+sheet_profile.json

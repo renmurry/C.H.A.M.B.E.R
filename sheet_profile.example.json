@@ -1,0 +1,11 @@
+{
+  "_readme": "Copy this file to %APPDATA%\\CHAMBER\\sheet_profile.json (or point the CHAMBER_PROFILE environment variable at it) and edit it for your own sheets. Never commit your real one.",
+  "id_length": 10,
+  "id_layout": [
+    ["district_code", 0, 2],
+    ["town_code", 2, 6],
+    ["block_no", 6, 10]
+  ],
+  "label_words": ["survey", "department"],
+  "label_prefixes": ["surveyof"]
+}

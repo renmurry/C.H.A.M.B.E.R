@@ -1,0 +1,13 @@
+# Minimum versions with broad pre-built wheel coverage (no compiler needed).
+# Using floors (not exact pins) so pip installs a ready-made build matching
+# whatever Python version you have.
+numpy>=1.26,<3
+opencv-python-headless>=4.9
+pymupdf>=1.24
+pyproj>=3.6
+rasterio>=1.3.9
+shapely>=2.0
+pikepdf>=8
+tqdm>=4.66
+pyogrio>=0.8
+rapidocr-onnxruntime>=1.3
