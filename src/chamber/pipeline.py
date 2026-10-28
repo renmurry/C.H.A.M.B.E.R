@@ -127,13 +127,16 @@ def process_one(pdf_path: str, params: dict) -> dict:
                 except Exception as e:
                     flags.append(f"{fmt.upper()}_FAILED:{type(e).__name__}")
                     props["qc"] = ";".join(flags)
-        if params["tif"]:
+        if params.get("tif", False):
             try:
                 W.write_geotiff(outdir / f"{sheet_id}_georef.tif", img, gref.bbox, gref.affine, epsg)
             except Exception as e:
                 flags.append(f"TIF_FAILED:{type(e).__name__}")
                 props["qc"] = ";".join(flags)
-        if pixel_pts is not None:
+        # debug overlay: "all" sheets, only "flagged" ones (default), or "none"
+        mode = params.get("debug_images", "flagged")
+        if pixel_pts is not None and (mode == "all" or
+                                      (mode == "flagged" and props["qc"] != "ok")):
             W.write_debug(outdir / f"{sheet_id}_debug.png", img, pixel_pts)
 
         res.update(qc=props["qc"], geometry=mapping(poly), props=props)

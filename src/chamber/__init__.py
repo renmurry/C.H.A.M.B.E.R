@@ -1,2 +1,2 @@
-"""chamber: pull block boundaries out of georeferenced PDF map sheets."""
-__version__ = "1.8.0"
+"""chamber: turn georeferenced PDF map sheets into GIS layers."""
+__version__ = "1.9.0"

@@ -96,7 +96,7 @@ th{{background:#f5f5f5}}td:first-child,th:first-child{{text-align:left}}
 .note{{color:#666;font-size:13px;max-width:760px;line-height:1.6}}</style>
 <h1>C.H.A.M.B.E.R &mdash; accuracy validation</h1>
 <table><thead><tr>{th}</tr></thead><tbody>{''.join(trs)}</tbody></table>
-<p class=note><b>Uncertainty</b> is the area band implied by the boundary line's
+<p class=note><b>Uncertainty</b> is the area band implied by the outline's
 own thickness (inner edge vs outer edge); the best estimate is the centreline.
 <b>CRS check</b> compares the projected (planar) area to the geodesic area on the
 WGS84 ellipsoid &mdash; a small value confirms the projection and georeferencing
@@ -106,7 +106,7 @@ are sound, independent of the trace.{' <b>Error</b> is the centreline area versu
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="chamber-validate",
-        description="Validate the accuracy of extracted block boundaries.")
+        description="Validate the accuracy of the extracted outlines.")
     ap.add_argument("input_dir")
     ap.add_argument("-o", "--output_dir", default=None)
     ap.add_argument("--epsg", default="auto")

@@ -23,7 +23,7 @@ The tool keeps no history and stores nothing of its own. The only files it makes
 are the ones you asked for, in the folder you chose, plus a local `run.log` of
 what it processed.
 
-## "But isn't AI-written code risky?"
+## "Is the code itself risky?"
 Fair question, so here's the straight version for this app.
 
 Most of the scary breach stuff (hacking, stolen logins, injection, data leaks)

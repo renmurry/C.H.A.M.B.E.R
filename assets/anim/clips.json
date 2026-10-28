@@ -1,0 +1,6 @@
+{
+  "rest": "throw_m.webp",
+  "throws": ["throw_s.webp", "throw_m.webp", "throw_l.webp"],
+  "pet": "pet.webp",
+  "finish": "finish.webp"
+}

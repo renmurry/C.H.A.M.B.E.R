@@ -5,8 +5,8 @@ you've got both a clicky app and a command-line version. Here's everything you
 need, top to bottom.
 
 ## What it does (10-second version)
-You give it georeferenced PDF map sheets. It traces the white block
-boundary off each one and saves it as proper GIS files (GeoJSON, KML, GeoTIFF)
+You give it georeferenced PDF map sheets. It traces the white
+outline off each one and saves it as proper GIS files (GeoJSON, KML, Shapefile, and more)
 in your coordinate system. There's an accuracy checker too.
 
 ---
@@ -44,11 +44,10 @@ Done. You won't need Python again to run either of them.
 
 Double-click **`dist\CHAMBER.exe`**. Then:
 
-1. **Browse** to the folder with your PDFs. (It looks inside every subfolder too, so you can point it at a big parent folder and it finds them all.)
+1. On the **Run** tab, **Browse** to the folder with your PDFs. (It looks inside every subfolder too, so you can point it at a big parent folder and it finds them all.)
 2. **Browse** to where you want the results.
-3. Pick a coordinate system, or just leave it on **Auto**, and tick which **export formats** you want (Shapefile, GeoPackage, etc.). To get one combined file for Google Earth Engine, also tick the merge option. To have it read the block number off each map, tick **"Read block IDs from the map (OCR)"**.
-4. Hit **Run**. The bar fills, the log scrolls, and a popup tells you when it's
-   done with a button to open the results.
+3. Optional, once: open the **Settings** tab to pick the coordinate system (or leave it on **Auto**), the **export formats** (Shapefile, GeoPackage, etc.), the merged file for Google Earth Engine, or **OCR** to read the sheet number off each map. Your choices are remembered.
+4. Back on **Run**, hit **Run**. A man and his dog play fetch while it works, the neon bar shows the progress, and a summary pops up at the end with a button to open the results.
 
 First time you open it, Windows might show a blue "Windows protected your PC"
 box. Click **More info**, then **Run anyway**. It's just unsigned, not dodgy.
@@ -70,7 +69,8 @@ Flags worth knowing:
 
 - `--epsg auto` - the coordinate system: `auto` picks the UTM zone per sheet, or give a code like `32643`
 - `--jobs 4` - chew through several PDFs at once
-- `--no-tif` - skip the big GeoTIFF images, just the shapes (much faster)
+- `--tif` - also save a georeferenced GeoTIFF of each sheet (off by default; slower)
+- `--debug-images all` - a debug picture for every sheet (default: only flagged ones)
 - `--simplify 0.001` - smaller number means more detail on the outline
 - `--formats shp,gpkg,dxf` - which file types to save (any of geojson, kml, shp, gpkg, dxf)
 
@@ -85,9 +85,8 @@ version at it to watch it work:
 dist\CHAMBER-CLI.exe  samples  -o  samples\out  --epsg auto
 ```
 
-Each PDF gives you the boundary as GeoJSON and KML, a GeoTIFF, and a "debug"
-image with the trace drawn on top. Glance at a couple of those debug images to
-see what it actually did.
+Each PDF gives you the outline as GeoJSON and KML (plus a GeoTIFF or a "debug"
+image with the trace drawn on top, if you ask for them - see the flags above).
 
 ---
 

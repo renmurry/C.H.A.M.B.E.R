@@ -14,7 +14,9 @@ def run_batch(input_dir, output_dir, params, jobs=1,
 
     on_progress(done, total)   called after each file
     on_log(result_dict)        called after each file with its result
-    `params` must contain output_dir, epsg, dpi, simplify, white_min, vector, tif.
+    `params` must contain output_dir, epsg, dpi, simplify, white_min, vector;
+    optional: tif (default off), debug_images ("flagged" default, "all", "none"),
+    formats, merge_zip, ocr.
     """
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)

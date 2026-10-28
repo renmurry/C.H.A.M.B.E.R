@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chamber"
-version = "1.8.0"
-description = "Extract block-boundary polygons from georeferenced (Geo)PDF map sheets"
+version = "1.9.0"
+description = "Turn georeferenced (Geo)PDF map sheets into GIS layers"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -19,6 +19,7 @@ dependencies = [
   "tqdm>=4.66",
   "pyogrio>=0.8",
   "rapidocr-onnxruntime>=1.3",
+  "PySide6-Essentials>=6.7",
 ]
 
 [project.optional-dependencies]

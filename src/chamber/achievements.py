@@ -10,13 +10,13 @@ from pathlib import Path
 
 # badge id, display name, one-line description, and a test over the stats dict
 BADGES = [
-    ("first_light", "First Light",   "Trace your first block.",
+    ("first_light", "First Light",   "Trace your first sheet.",
      lambda s: s["total_blocks"] >= 1),
     ("regular",     "Regular",       "Finish 10 runs.",
      lambda s: s["total_runs"] >= 10),
-    ("centurion",   "Centurion",     "Trace 100 blocks in total.",
+    ("centurion",   "Centurion",     "Trace 100 sheets in total.",
      lambda s: s["total_blocks"] >= 100),
-    ("cartographer","Cartographer",  "Trace 1,000 blocks in total.",
+    ("cartographer","Cartographer",  "Trace 1,000 sheets in total.",
      lambda s: s["total_blocks"] >= 1000),
     ("spotless",    "Spotless",      "Finish a run with zero issues.",
      lambda s: s["clean_runs"] >= 1),

@@ -18,11 +18,13 @@ hiddenimports += ['rasterio._shim', 'rasterio.sample', 'rasterio.vrt',
 datas += [('assets/app.ico', 'assets'),
           ('assets/logo_48.png', 'assets'),
           ('assets/logo_64.png', 'assets'),
-          ('assets/logo.png', 'assets')]
+          ('assets/logo.png', 'assets'),
+          ('assets/logo_512.png', 'assets'),
+          ('assets/anim', 'assets/anim')]          # the stage animation clips
 
 a = Analysis(['app.py'], pathex=['src'], binaries=binaries, datas=datas,
              hiddenimports=hiddenimports, hookspath=[], hooksconfig={},
-             runtime_hooks=[], excludes=[], noarchive=False)
+             runtime_hooks=[], excludes=['tkinter'], noarchive=False)
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, a.binaries, a.datas, [],
           name='CHAMBER', debug=False, bootloader_ignore_signals=False,

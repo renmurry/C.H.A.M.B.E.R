@@ -1,4 +1,4 @@
-"""Filename codes, number matching, digit clean-up and the pixel dog sprites."""
+"""Filename codes, number matching and digit clean-up."""
 import json
 import pytest
 from chamber import ocr as OCR
@@ -75,15 +75,3 @@ def test_label_words_are_not_names(no_profile):
 def test_profile_adds_label_words(profile):
     assert OCR._is_label_word("survey") and OCR._is_label_word("surveyofland")
     assert not OCR._is_label_word("riverside")
-
-
-def test_pixel_dog_sprites_are_well_formed():
-    pytest.importorskip("tkinter")
-    from chamber import pixeldog as P
-    for legs, tail in P.RUN_CYCLE + [("stand", True)]:
-        f = P.dog_frame(legs, tail)
-        assert len(f) == 12 and all(len(r) == 18 for r in f)
-        assert set("".join(f)) <= set(P.PALETTE) | {"."}
-    for art in (P.BONE, P.HEART):
-        assert len({len(r) for r in art}) == 1
-        assert set("".join(art)) <= set(P.PALETTE) | {"."}

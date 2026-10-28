@@ -8,11 +8,11 @@ dist/
 .pytest_cache/
 # generated outputs
 converted/
-*_block.geojson
-*_block.kml
+*.geojson
+*.kml
 *_georef.tif
 *_debug.png
-_index_blocks.geojson
+_index_*
 _report.csv
 run.log
 demo_in/
@@ -31,3 +31,9 @@ test_run_in/
 
 # your private sheet profile - never commit (see sheet_profile.example.json)
 sheet_profile.json
+
+# 3D models and rendered frames for tools/animation (download yourself, see its README)
+tools/animation/models/
+tools/animation/frames/
+*.glb
+*.fbx

@@ -24,7 +24,7 @@ def _setup_logging(outdir: Path, verbose: bool):
 def build_parser():
     p = argparse.ArgumentParser(
         prog="chamber",
-        description="Extract block-boundary polygons from georeferenced (Geo)PDF sheets.")
+        description="Turn georeferenced (Geo)PDF sheets into GIS layers.")
     p.add_argument("input_dir", help="folder containing *.pdf sheets")
     p.add_argument("-o", "--output_dir", default=None,
                    help="output folder (default: INPUT_DIR/converted)")
@@ -35,18 +35,22 @@ def build_parser():
     p.add_argument("--simplify", type=float, default=0.0010,
                    help="polygon simplification (lower = more vertices)")
     p.add_argument("--white-min", type=int, default=175,
-                   help="white threshold for the boundary line (0-255)")
+                   help="white threshold for the outline (0-255)")
     p.add_argument("--no-vector", action="store_true",
-                   help="disable vector-boundary detection (force raster trace)")
+                   help="disable vector-outline detection (force raster trace)")
     p.add_argument("--formats", default="geojson,kml",
                    help="comma-separated vector outputs from geojson,kml,shp,gpkg,dxf "
                         "(default: geojson,kml)")
-    p.add_argument("--no-tif", action="store_true", help="skip GeoTIFF output")
+    p.add_argument("--tif", action="store_true",
+                   help="also write a georeferenced GeoTIFF of each sheet (slower)")
+    p.add_argument("--no-tif", action="store_true", help=argparse.SUPPRESS)  # old flag, now the default
+    p.add_argument("--debug-images", choices=["flagged", "all", "none"], default="flagged",
+                   help="debug overlay PNGs: only for flagged sheets (default), all, or none")
     p.add_argument("--merge-zip", action="store_true",
                    help="also write one merged, zipped shapefile (+ WGS84) for GEE; "
                         "individual files are kept")
     p.add_argument("--ocr", action="store_true",
-                   help="read the block ID and place name off the map (offline OCR) "
+                   help="read the sheet ID and place name off the map (offline OCR) "
                         "and add them as attributes, checked against the sheet ID in the filename")
     p.add_argument("--jobs", type=int, default=1,
                    help="parallel worker processes (default 1)")
@@ -78,7 +82,8 @@ def main(argv=None):
         return 2
     params = {"output_dir": str(outdir), "epsg": args.epsg, "dpi": args.dpi,
               "simplify": args.simplify, "white_min": args.white_min,
-              "vector": not args.no_vector, "tif": not args.no_tif, "formats": formats,
+              "vector": not args.no_vector, "tif": args.tif and not args.no_tif,
+              "debug_images": args.debug_images, "formats": formats,
               "merge_zip": args.merge_zip, "ocr": args.ocr}
 
     log.info("Processing %d PDF(s) -> %s  (EPSG:%s, jobs=%d)",

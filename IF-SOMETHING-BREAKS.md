@@ -8,8 +8,8 @@ to you.
 ## The two golden rules
 
 **Rule 1: You're never stuck alone.**
-Whatever the screen says, you can copy that text, paste it to Claude (or any AI
-helper), and say "this happened, help." Describing the problem in plain words is
+Whatever the screen says, you can copy that text, send it to whoever helps you
+with the tool (or open an issue on the GitHub page), and say "this happened, help." Describing the problem in plain words is
 all the skill you need. The fixing part is not yours to carry.
 
 **Rule 2: Your backup is your undo button.**
@@ -56,7 +56,12 @@ one and why. The good sheets are all fine.
 ### My Shapefile / GeoPackage files didn't appear
 Make sure those boxes were ticked before you hit Run. If they were ticked and
 still nothing showed up, check the log for `SHP_FAILED` or `GPKG_FAILED` and
-send that line to Claude. (Easy fix on our end.)
+report that line (open an issue on the GitHub page). It's an easy fix.
+
+### The window looks odd, laggy or see-through in a strange way
+That's the glass blur not agreeing with this PC's graphics. Open the
+**Settings** tab, untick **"Glass blur behind the window"**, close the app and
+open it again. It switches to a plain dark glass look that works everywhere.
 
 ### The app looks frozen during a big batch
 Give it a moment. Big folders or high `--jobs` take time, and the window can
@@ -83,7 +88,7 @@ You're back to a known-good tool. This works no matter what went wrong.
 
 When something shows an error:
 1. Select the text (or take a screenshot, or even snap a photo of the screen).
-2. Send it to Claude with a sentence like: "I ran X, then this showed up."
+2. Send it to whoever helps you with the tool (or open an issue on GitHub) with a sentence like: "I ran X, then this showed up."
 3. That's it. You'll get a plain steps-to-fix back.
 
 You do not need to understand the error. You just need to pass it along.
@@ -94,6 +99,6 @@ You do not need to understand the error. You just need to pass it along.
 
 You built this. It's yours, it's offline, it's safe, and it's backed up. Breaking
 it in a way that can't be undone is genuinely hard to do. So go use it without
-fear, and if it ever hiccups, this page (and a quick paste to Claude) has you.
+fear, and if it ever hiccups, this page (and a quick message for help) has you.
 
 You've got this.
