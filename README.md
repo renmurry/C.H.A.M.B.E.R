@@ -103,7 +103,7 @@ one point; the app tells you so and works in pixels.
 | Point `P` | Drop a point (a landmark, pole, well). |
 | Pick `V` | Select a feature (**Delete** removes it), or click a line drawn in the PDF to select every line drawn the same way. |
 | Find similar `F` | After you keep one or more of a kind, it looks for more that look the same, in this area, the whole image, or every open file. Each one comes up for **Enter** (keep) or **Esc** (drop). The Looser / Stricter slider sets how alike they must be. |
-| Read text `T` | Text printed on the map becomes points in Landmarks (exact for PDFs with real text, offline OCR for images). |
+| Read text `T` | Text printed on the map is read (exact for PDFs with real text, offline OCR for images) and **names your features**: a label running along a road names the road, a label inside an area names the area, a label beside a pin names the pin. Labels that fit nothing stay as points in Landmarks. Click any feature to fix its name. |
 
 **Enter** keeps, **Esc** drops, clicking somewhere new keeps the last one and
 starts the next. Keep several in a row for a **combo** (a drop resets it). While
@@ -128,7 +128,7 @@ than a fifth.
 with **+ Layer**. Click a layer to draw into it, Ctrl+click to hide it. Areas and
 lengths are shown in m² / ha / m / km when the map is placed.
 
-**Export** writes every layer with its attributes (layer, method, confidence,
+**Export** writes every layer with its attributes (layer, name, method, confidence,
 text, area or length, source file): GeoPackage (one file, all layers),
 Shapefile, GeoJSON, KML (attributes show in the Google Earth balloon) or DXF.
 

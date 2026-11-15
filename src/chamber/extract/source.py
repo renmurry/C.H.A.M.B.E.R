@@ -130,7 +130,7 @@ def _pdf_raster(page):
             return np.ascontiguousarray(a), (r.width / w, r.x0, r.height / h, r.y0)
         except Exception:
             pass                                   # odd image encoding: render instead
-    dpi = min(300.0, MAX_SIDE / max(page.rect.width, page.rect.height) * 72)
+    dpi = int(min(300, MAX_SIDE / max(page.rect.width, page.rect.height) * 72))   # newer PyMuPDF wants a whole number
     pix = page.get_pixmap(dpi=dpi, alpha=False)
     a = np.frombuffer(pix.samples, np.uint8).reshape(pix.height, pix.width, pix.n)[..., :3]
     s = 72.0 / dpi

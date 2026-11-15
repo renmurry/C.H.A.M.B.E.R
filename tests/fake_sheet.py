@@ -29,7 +29,7 @@ DATES = [("Created on:", "22-05-2026 13:35:02"),
 
 
 def make_sheet(path) -> Path:
-    import fitz
+    import pymupdf as fitz
     import pikepdf
 
     path = Path(path)

@@ -3,7 +3,7 @@
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 datas, binaries, hiddenimports = [], [], []
-for pkg in ['rasterio', 'pyproj', 'shapely', 'cv2', 'fitz', 'pikepdf', 'pyogrio',
+for pkg in ['rasterio', 'pyproj', 'shapely', 'cv2', 'pymupdf', 'pikepdf', 'pyogrio',
             'rapidocr_onnxruntime', 'onnxruntime', 'sounddevice', '_sounddevice_data']:
     try:
         d, b, h = collect_all(pkg)

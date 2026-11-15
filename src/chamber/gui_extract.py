@@ -468,6 +468,10 @@ class ExtractPage(QWidget):
         self.pend_title = QLabel("Nothing yet"); self.pend_title.setObjectName("big")
         self.pend_info = QLabel("Pick a tool and click the map."); self.pend_info.setObjectName("muted"); self.pend_info.setWordWrap(True)
         pl.addWidget(self.pend_title); pl.addWidget(self.pend_info)
+        self.name_edit = QLineEdit(); self.name_edit.setPlaceholderText("Name (type, then Enter)")
+        self.name_edit.setToolTip("The name exported with this feature. Read map text [T] fills it in from the map.")
+        self.name_edit.editingFinished.connect(self._rename_selected); self.name_edit.hide()
+        pl.addWidget(self.name_edit)
         row = QHBoxLayout(); row.setSpacing(6)
         self.keep_btn = QPushButton(" Keep"); self.keep_btn.setObjectName("primary"); self.keep_btn.clicked.connect(self.accept)
         self.keep_btn.setToolTip("Keep it  [Enter]")
@@ -795,7 +799,9 @@ class ExtractPage(QWidget):
             geoms = [g for g in geoms if g.geom_type == "LineString"]
         else:
             geoms = [g for g in geoms if g.geom_type == "Polygon"]
-        self.cur.session.add(L.name, [Feature(g, "pdf") for g in geoms])
+        with self.cur.session.group():
+            new = self.cur.session.add(L.name, [Feature(g, "pdf") for g in geoms])
+            self._attach_names(only=[(L.name, f) for f in new], quiet=True)
         self.toast.emit(f"Took {len(geoms)} from the PDF into {L.name}")
         self.sound.emit("combo"); self._flash = (L.name, time.time())
         for g in geoms[:40]:
@@ -954,7 +960,9 @@ class ExtractPage(QWidget):
             from shapely.geometry import Point
             if self.pending:
                 self.accept()
-            self.cur.session.add(self.active_layer, Feature(Point(x, y), "point"))
+            with self.cur.session.group():
+                new = self.cur.session.add(self.active_layer, Feature(Point(x, y), "point"))
+                self._attach_names(only=[(self.active_layer, f) for f in new], quiet=True)
             self._celebrate(self.active_layer, Point(x, y))
             self.stat.emit("features", 1); self._refresh_all()
         elif tool == "pick":
@@ -1010,12 +1018,91 @@ class ExtractPage(QWidget):
     def _show_selected(self):
         if not self.selected:
             self.pend_title.setText("Nothing selected"); self.pend_info.setText("")
+            self._name_visible(False)
             return
         lname, f = self.selected
+        if f.method == "label":
+            self._name_visible(False)
+        else:
+            self.name_edit.blockSignals(True); self.name_edit.setText(f.name); self.name_edit.blockSignals(False)
+            self._name_visible(True)
         kind, v, u = self.cur.session.measure(f.geom)
         val = f"{v:,.1f} {u}" if kind != "point" else ""
         self.pend_title.setText(f"{lname[:-1] if lname.endswith('s') else lname}" + (f" · {val}" if val else ""))
         self.pend_info.setText(f"{f.method}" + (f" · “{f.text}”" if f.text else "") + "  ·  Delete removes it")
+
+    def _name_visible(self, on):
+        if self.name_edit.isVisible() != on and (on or not self.name_edit.isHidden()):
+            self.name_edit.setVisible(on)
+            self._place_floats()
+
+    def _name_tag(self, text, x, y, color):
+        """A map name: white letters with a dark rim so they read on any image, kept upright and sharp."""
+        from PySide6.QtWidgets import QGraphicsPathItem as GPI
+        f = QFont(); f.setPointSizeF(9.5); f.setBold(True)
+        path = QPainterPath(); path.addText(0, 0, f, text)
+        r = path.boundingRect(); path.translate(-r.center().x(), r.height() / 2 - 2)
+        rim = GPI(path); rim.setPen(QPen(QColor(17, 24, 39, 230), 3.2, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+        rim.setBrush(QColor(17, 24, 39, 230)); rim.setPos(x, y); rim.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        fill = GPI(path); fill.setPen(Qt.NoPen); fill.setBrush(QColor("#ffffff")); fill.setPos(x, y)
+        fill.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        return rim, fill
+
+    def _rename_selected(self):
+        if not (self.selected and self.cur):
+            return
+        lname, f = self.selected
+        new = self.name_edit.text().strip()
+        if new != f.name:
+            self.cur.session.rename(lname, f, new)
+            f.meta["named_by"] = "you"
+            self._refresh_all()
+        self.map.setFocus()
+
+    # ============================================================ Read: names from the map
+    def _labels_of(self, fs):
+        """The map-text points of a file, as bind labels (plus the features they came from)."""
+        from .extract.labels import Label
+        L = fs.session.layers.get("Landmarks")
+        feats = [f for f in (L.features if L else []) if f.method == "label"]
+        labs = [Label(f.text, f.geom.x, f.geom.y, f.conf, f.meta.get("angle", 0.0),
+                      f.meta.get("height", 12.0), f.meta.get("width", 8.0 * len(f.text))) for f in feats]
+        return labs, feats
+
+    def _attach_names(self, only=None, quiet=False):
+        """Give features the map labels that belong to them. `only`: just these (layer, feature)."""
+        if not self.cur:
+            return 0
+        from .extract import bind
+        fs, S = self.cur, self.cur.session
+        labs, lab_feats = self._labels_of(fs)
+        if not labs:
+            return 0
+        merged = bind.merge_stacked(labs)
+        if only is not None:
+            targets = [(ln, S.layers[ln].kind, f) for ln, f in only if f.method != "label"]
+        else:
+            targets = [(L.name, L.kind, f) for L in S.layers.values() for f in L.features
+                       if f.method != "label" and f.meta.get("named_by") != "you"]
+        hits = bind.match(merged, targets)
+        if not hits:
+            if not quiet:
+                self.toast.emit("No labels sit on or inside your features yet")
+            return 0
+        used = set()
+        with S.group():
+            for layer, f, name, idx, score in hits.values():
+                S.rename(layer, f, name)
+                f.meta["named_by"] = "map"
+                for i in idx:
+                    used.update(merged[i].parts)
+            for i in sorted(used, reverse=True):
+                S.remove("Landmarks", lab_feats[i])
+        if not quiet:
+            left = len(lab_feats) - len(used)
+            self.toast.emit(f"Named {len(hits)} feature{'s' if len(hits) != 1 else ''} from the map"
+                            + (f" · {left} labels left in Landmarks" if left else ""))
+        return len(hits)
 
     def _delete_selected(self):
         if self.file_list.hasFocus():
@@ -1077,6 +1164,7 @@ class ExtractPage(QWidget):
 
     def _show_pending(self):
         p = self.pending
+        self._name_visible(False)
         if not p or not p.polys:
             self.pendingChanged.emit(False); self._draw(); return
         kind, v, u = self.cur.session.measure(p.geom)
@@ -1106,6 +1194,9 @@ class ExtractPage(QWidget):
             self._show_pending()
 
     def _enter(self):
+        from PySide6.QtWidgets import QApplication
+        if isinstance(QApplication.focusWidget(), QLineEdit):
+            QApplication.focusWidget().clearFocus(); self.map.setFocus(); return
         if self.map.tool in PAINT_TOOLS and not self.pending and not self.review:
             self.find_roads(); return
         if self.map.tool == "line" and self.line_clicks and not self.pending:
@@ -1117,13 +1208,20 @@ class ExtractPage(QWidget):
         p = self.pending
         if not p or not p.polys:
             return
-        self.cur.session.add(p.layer, Feature(p.geom, p.method, p.scores[p.idx] if p.scores else 1.0, attrs=dict(p.attrs)))
-        if p.surface is not None:
-            L = self.cur.session.layers[p.layer]
-            sname = f"{p.layer} surface"
-            self.cur.session.layer(sname, "polygon", L.color)
-            self.cur.session.add(sname, Feature(p.surface, p.method, p.scores[p.idx] if p.scores else 1.0, attrs=dict(p.attrs)))
-            self._spawn("keep", p.surface, QColor(L.color))
+        S = self.cur.session
+        with S.group():
+            f = Feature(p.geom, p.method, p.scores[p.idx] if p.scores else 1.0, attrs=dict(p.attrs))
+            S.add(p.layer, f)
+            sf = None
+            if p.surface is not None:
+                L = S.layers[p.layer]
+                sname = f"{p.layer} surface"
+                S.layer(sname, "polygon", L.color)
+                sf = Feature(p.surface, p.method, p.scores[p.idx] if p.scores else 1.0, attrs=dict(p.attrs))
+                S.add(sname, sf)
+                self._spawn("keep", p.surface, QColor(L.color))
+            if self._attach_names(only=[(p.layer, f)], quiet=True) and sf is not None and f.name:
+                S.rename(sname, sf, f.name)
         self._celebrate(p.layer, p.geom)
         self.stat.emit("features", 1)
         if p.method == "similar":
@@ -1240,6 +1338,8 @@ class ExtractPage(QWidget):
         if not self.cur or self._job:
             return
         from .extract import labels
+        if getattr(self.cur, "labels_read", False):
+            self._attach_names(); self._refresh_all(); return
         src = self.cur.src
         self.st_model.setText("Reading map text…")
         self._run("text", lambda: labels.read_labels(src, progress=lambda a, b: self.bridge.progress.emit(a, b)))
@@ -1339,10 +1439,13 @@ class ExtractPage(QWidget):
         elif tag == "text":
             from shapely.geometry import Point
             L = self.cur.session.layers.get("Landmarks")
-            items = [Feature(Point(x, y), "label", c, t) for t, x, y, c in res]
+            items = [Feature(Point(l.x, l.y), "label", l.conf, l.text,
+                             meta={"angle": l.angle, "height": l.height, "width": l.width}) for l in res]
+            self.cur.labels_read = True
             if items:
                 self.cur.session.add("Landmarks", items)
-                self.toast.emit(f"Read {len(items)} labels into Landmarks")
+                named = self._attach_names(quiet=True)
+                self.toast.emit(f"Read {len(items)} labels" + (f" · named {named} features" if named else " into Landmarks"))
             else:
                 self.toast.emit("No text found (or the OCR engine isn't installed)")
             self.st_model.setText("Model: ready"); self._refresh_all()
@@ -1383,6 +1486,8 @@ class ExtractPage(QWidget):
 
     def _refresh_all(self):
         self._refresh_layers(); self._draw()
+        if not self.selected or self.pending:
+            self._name_visible(False)
         self.act_btn["undo"].setEnabled(bool(self.cur and self.cur.session.undo_stack))
         self.act_btn["redo"].setEnabled(bool(self.cur and self.cur.session.redo_stack))
         if not self.pending and not self.selected:
@@ -1410,17 +1515,20 @@ class ExtractPage(QWidget):
                     e = QGraphicsEllipseItem(-5, -5, 10, 10); e.setPos(f.geom.x, f.geom.y)
                     e.setFlag(QGraphicsItem.ItemIgnoresTransformations)
                     e.setBrush(c); e.setPen(pen("#111827", 1.5)); add(e, 20)
-                    if f.text:
-                        from PySide6.QtWidgets import QGraphicsSimpleTextItem
-                        tx = QGraphicsSimpleTextItem(f.text); tx.setPos(f.geom.x, f.geom.y)
-                        tx.setFlag(QGraphicsItem.ItemIgnoresTransformations); tx.setBrush(QColor("#ffffff"))
-                        tx.setPen(pen("#111827", 0.6)); add(tx, 21)
+                    if f.text or f.name:
+                        for k, it2 in enumerate(self._name_tag(f.name or f.text, f.geom.x, f.geom.y - 14, c)):
+                            add(it2, 21 + k * 0.1)
                     continue
                 it = QGraphicsPathItem(geom_path(f.geom))
                 it.setPen(pen(c, 4.5 if sel else 2.6))
                 if f.geom.geom_type == "Polygon":
                     fc = QColor(c); fc.setAlpha(110 if sel else 46); it.setBrush(fc)
                 add(it, 10)
+                if f.name:
+                    g = f.geom
+                    at = g.interpolate(0.5, normalized=True) if "Line" in g.geom_type else g.representative_point()
+                    for k, it2 in enumerate(self._name_tag(f.name, at.x, at.y, c)):
+                        add(it2, 21 + k * 0.1)
         # drawn PDF style preview
         if self.picked_style is not None:
             col = QColor(t.accent)

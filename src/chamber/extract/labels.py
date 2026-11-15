@@ -5,7 +5,20 @@ Images and flattened PDFs: offline OCR (the same engine the batch mode uses).
 Grid labels around the frame are left out: they place the map, they aren't on it.
 """
 from __future__ import annotations
+import math
+from typing import NamedTuple
 import numpy as np
+
+
+class Label(NamedTuple):
+    text: str
+    x: float              # centre, image px
+    y: float
+    conf: float
+    angle: float = 0.0    # reading direction, degrees in image axes (0 = left to right)
+    height: float = 12.0  # letter height, px
+    width: float = 0.0    # length of the text, px
+    parts: tuple = ()     # filled in by bind.merge_stacked
 
 
 def _is_grid(t):
@@ -17,16 +30,22 @@ def from_pdf(src):
     import pymupdf
     page = pymupdf.open(src.path)[src.page_index]
     h, w = src.image.shape[:2]
+    ax, ay = src.page_to_px(0, 0); bx, by = src.page_to_px(1, 0)
+    k = math.hypot(bx - ax, by - ay)                 # image px per PDF point
     out = []
     for b in page.get_text("dict")["blocks"]:
         for line in b.get("lines", []):
-            t = " ".join(s["text"].strip() for s in line["spans"] if s["text"].strip())
+            spans = [s for s in line["spans"] if s["text"].strip()]
+            t = " ".join(s["text"].strip() for s in spans)
             if not t or _is_grid(t):
                 continue
             x0, y0, x1, y1 = line["bbox"]
             x, y = src.page_to_px((x0 + x1) / 2, (y0 + y1) / 2)
             if 0 <= x < w and 0 <= y < h:
-                out.append((t, float(x), float(y), 1.0))
+                c, s_ = line.get("dir", (1.0, 0.0))
+                size = max(s["size"] for s in spans) * k
+                length = max(abs(x1 - x0), abs(y1 - y0)) * k
+                out.append(Label(t, float(x), float(y), 1.0, math.degrees(math.atan2(s_, c)), size * 0.75, length))
     return out
 
 
@@ -51,7 +70,10 @@ def from_ocr(image, min_conf=0.6, progress=None):
             if not t or float(conf) < min_conf or _is_grid(t):
                 continue
             bx = [p[0] for p in box]; by = [p[1] for p in box]
-            found.append((t, tx + sum(bx) / 4, ty + sum(by) / 4, float(conf)))
+            (x0, y0), (x1, y1), _, (x3, y3) = box[:4]
+            found.append(Label(t, tx + sum(bx) / 4, ty + sum(by) / 4, float(conf),
+                               math.degrees(math.atan2(y1 - y0, x1 - x0)),
+                               math.hypot(x3 - x0, y3 - y0) * 0.75, math.hypot(x1 - x0, y1 - y0)))
         if progress:
             progress(i + 1, n)
     # the same word read twice in an overlap: keep the surer one

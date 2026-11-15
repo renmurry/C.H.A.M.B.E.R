@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+- **Read (Extract tab)**: `T` now names your features from the map. A label
+  running along a road names the road; a label inside an area names the area;
+  a label beside a pin names the pin. A road named twice takes the name most
+  labels agree on, and names printed on two lines are joined. Used labels leave
+  Landmarks; the rest stay there. Features kept later are named as you keep
+  them.
+- Every exported layer has a new **name** column. Click a feature to see or
+  type its name (one undo step undoes it). Names show on the map.
+- Fixed: opening a PDF without a large embedded image (a vector-only map) in
+  the Extract tab failed with newer PyMuPDF versions.
+- The "fitz is deprecated" warning on start is gone.
+
 ## 2.0.1
 - First downloadable release of 2.0: `CHAMBER.exe` and `CHAMBER-CLI.exe`
   are attached to the GitHub Release. No feature changes from 2.0.0.

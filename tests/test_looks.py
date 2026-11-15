@@ -136,3 +136,35 @@ def test_road_brush_end_to_end(app, tmp_path):
     roads = E.cur.session.layers["Roads"].features
     assert roads and "width_m" in roads[0].attrs
     assert E.cur.session.layers["Roads surface"].features
+
+
+def test_read_names_the_road_and_you_can_rename_it(app, tmp_path):
+    import time, pymupdf
+    from fake_extract import make_pdf
+    qa, w = app
+    p0 = tmp_path / "plain.pdf"; make_pdf(p0)
+    doc = pymupdf.open(str(p0))
+    doc[0].insert_text((330, 97), "Pine Road", fontsize=6)          # just above the orange road line
+    p = tmp_path / "named.pdf"; doc.save(str(p))
+    E = w.extract
+    E.open_files([str(p)])
+    t = time.time()
+    while (E._job or not E.files) and time.time() - t < 30:
+        qa.processEvents(); time.sleep(0.02)
+    i = next(k for k, s in enumerate(E.cur.styles) if s.label.startswith("Orange line"))
+    E.active_layer = "Roads"
+    E.style_list.setCurrentRow(i); E._take_style()
+    E.read_text()
+    t = time.time()
+    while E._job and time.time() - t < 30:
+        qa.processEvents(); time.sleep(0.02)
+    road = E.cur.session.layers["Roads"].features[0]
+    assert road.name == "Pine Road"
+    assert not any(f.text == "Pine Road" for f in E.cur.session.layers["Landmarks"].features)
+    E.selected = ("Roads", road); E._show_selected()
+    assert E.name_edit.text() == "Pine Road"
+    E.name_edit.setText("Pine Road North"); E._rename_selected()
+    assert road.name == "Pine Road North"
+    E.read_text()                          # labels already read: re-attach leaves your own name alone
+    assert road.name == "Pine Road North"
+    E.undo(); assert road.name == "Pine Road"

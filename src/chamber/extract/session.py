@@ -19,6 +19,8 @@ class Feature:
     text: str = ""
     attrs: dict = field(default_factory=dict)      # extra numbers, e.g. width_m for roads
     fid: int = field(default_factory=lambda: next(_ids))
+    name: str = ""               # the name printed on the map (Read) or typed in
+    meta: dict = field(default_factory=dict)       # app-only notes, never exported
 
 
 @dataclass
@@ -36,6 +38,7 @@ class Session:
         self.layers = {n: Layer(n, k, c) for n, k, c in DEFAULT_LAYERS}
         self.undo_stack, self.redo_stack = [], []
         self.changes = 0             # edits so far
+        self._group = None           # edits collected into one undo step
         self.exported_at = 0         # value of `changes` at the last export
 
     # ---------- layers ----------
@@ -53,30 +56,83 @@ class Session:
         return sum(len(l.features) for l in self.layers.values())
 
     # ---------- edits (all undoable) ----------
+    def _push(self, op):
+        if self._group is not None:
+            self._group.append(op)
+        else:
+            self.undo_stack.append(op); self.redo_stack.clear()
+        self.changes += 1
+
+    def group(self):
+        """`with session.group():` turns every edit inside into a single undo step."""
+        sess = self
+
+        class _G:
+            def __enter__(self):
+                self.outer = sess._group is not None
+                if not self.outer:
+                    sess._group = []
+
+            def __exit__(self, *exc):
+                if self.outer:
+                    return False
+                ops, sess._group = sess._group, None
+                if ops:
+                    sess.undo_stack.append(("batch", None, ops)); sess.redo_stack.clear()
+                return False
+        return _G()
+
     def add(self, layer, feats):
         feats = feats if isinstance(feats, list) else [feats]
         L = self.layers[layer]
         L.features.extend(feats)
-        self.undo_stack.append(("add", layer, feats)); self.redo_stack.clear()
-        self.changes += 1
+        self._push(("add", layer, feats))
         return feats
 
     def remove(self, layer, feat):
         L = self.layers[layer]
         i = L.features.index(feat); L.features.pop(i)
-        self.undo_stack.append(("remove", layer, [feat], i)); self.redo_stack.clear()
-        self.changes += 1
+        self._push(("remove", layer, [feat], i))
+
+    def rename(self, layer, feat, name):
+        old = feat.name
+        if old == name:
+            return
+        feat.name = name
+        self._push(("rename", layer, [feat], old, name))
+
+    def _back(self, op):
+        if op[0] == "batch":
+            for o in reversed(op[2]):
+                self._back(o)
+            return
+        L = self.layers[op[1]]
+        if op[0] == "add":
+            for f in op[2]:
+                L.features.remove(f)
+        elif op[0] == "remove":
+            L.features.insert(op[3], op[2][0])
+        else:
+            op[2][0].name = op[3]
+
+    def _forward(self, op):
+        if op[0] == "batch":
+            for o in op[2]:
+                self._forward(o)
+            return
+        L = self.layers[op[1]]
+        if op[0] == "add":
+            L.features.extend(op[2])
+        elif op[0] == "remove":
+            L.features.remove(op[2][0])
+        else:
+            op[2][0].name = op[4]
 
     def undo(self):
         if not self.undo_stack:
             return None
         op = self.undo_stack.pop()
-        L = self.layers[op[1]]
-        if op[0] == "add":
-            for f in op[2]:
-                L.features.remove(f)
-        else:
-            L.features.insert(op[3], op[2][0])
+        self._back(op)
         self.redo_stack.append(op)
         self.changes += 1
         return op
@@ -85,11 +141,7 @@ class Session:
         if not self.redo_stack:
             return None
         op = self.redo_stack.pop()
-        L = self.layers[op[1]]
-        if op[0] == "add":
-            L.features.extend(op[2])
-        else:
-            L.features.remove(op[2][0])
+        self._forward(op)
         self.undo_stack.append(op)
         self.changes += 1
         return op
@@ -133,10 +185,11 @@ class Session:
                 continue
             geoms = [self.to_map(f.geom) for f in L.features]
             meas = [self.measure(f.geom) for f in L.features]
-            fields = ["fid", "layer", "method", "conf", "text", "area_m2" if self.source.metric else "area",
+            fields = ["fid", "layer", "name", "method", "conf", "text", "area_m2" if self.source.metric else "area",
                       "length_m" if self.source.metric else "length", "src_file"]
             data = [np.array([f.fid for f in L.features], dtype="i4"),
                     np.array([L.name] * len(geoms), dtype=object),
+                    np.array([f.name for f in L.features], dtype=object),
                     np.array([f.method for f in L.features], dtype=object),
                     np.array([round(f.conf, 3) for f in L.features], dtype="f8"),
                     np.array([f.text for f in L.features], dtype=object),

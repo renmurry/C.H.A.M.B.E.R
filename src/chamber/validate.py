@@ -11,7 +11,7 @@ from __future__ import annotations
 import argparse, csv
 from pathlib import Path
 
-import fitz
+import pymupdf as fitz
 from pyproj import Transformer, Geod
 from shapely.geometry import Polygon
 
