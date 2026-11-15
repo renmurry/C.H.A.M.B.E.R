@@ -26,11 +26,28 @@ BADGES = [
      lambda s: s["max_batch"] >= 25),
     ("polyglot",    "Polyglot",      "Export in all five formats.",
      lambda s: len(set(s["formats_used"]) & {"geojson","kml","shp","gpkg","dxf"}) == 5),
+    # Extract screen
+    ("first_outline", "First Outline", "Keep your first extracted feature.",
+     lambda s: s.get("x_features", 0) >= 1),
+    ("tree_hugger",  "Tree Hugger",   "Keep 25 trees.",
+     lambda s: s.get("x_trees", 0) >= 25),
+    ("road_runner",  "Road Runner",   "Draw 1 km of roads or streams.",
+     lambda s: s.get("x_road_m", 0) >= 1000),
+    ("copycat",      "Copycat",       "Keep 10 features found by Find similar.",
+     lambda s: s.get("x_similar", 0) >= 10),
+    ("gridlock",     "Gridlock",      "Open a map placed from its printed grid labels.",
+     lambda s: s.get("x_grid", 0) >= 1),
+    ("town_red",     "Paint the Town Red", "Close a red loop with Paint the Map Red.",
+     lambda s: s.get("x_red", 0) >= 1),
+    ("shape_shifter","Shape Shifter", "See all six looks.",
+     lambda s: len(s.get("looks_seen", [])) >= 6),
 ]
 
 _DEFAULT = {"total_blocks": 0, "total_runs": 0, "clean_runs": 0,
             "clean_streak": 0, "best_streak": 0, "max_batch": 0,
-            "formats_used": [], "unlocked": []}
+            "formats_used": [], "unlocked": [],
+            "x_features": 0, "x_trees": 0, "x_road_m": 0.0, "x_similar": 0, "x_grid": 0,
+            "looks_seen": []}
 
 
 def stats_path() -> Path:
@@ -89,3 +106,30 @@ def record_run(summary: dict, formats) -> tuple[dict, list]:
     s["unlocked"] = sorted(unlocked)
     save_stats(s)
     return s, newly
+
+
+EVENT_KEYS = {"features": "x_features", "trees": "x_trees", "road_m": "x_road_m",
+              "similar_kept": "x_similar", "placed_by_grid": "x_grid", "red_loop": "x_red"}
+
+
+def record_event(key: str, amount: float = 1) -> list:
+    """Count something done on the Extract screen; return newly unlocked badges.
+    key: one of EVENT_KEYS, "look:<n>" (a look seen) or "formats:<a,b>" (exported)."""
+    s = load_stats()
+    if key.startswith("look:"):
+        s["looks_seen"] = sorted(set(s["looks_seen"]) | {key[5:]})
+    elif key.startswith("formats:"):
+        s["formats_used"] = sorted(set(s["formats_used"]) | set(filter(None, key[8:].split(","))))
+    elif key in EVENT_KEYS:
+        s[EVENT_KEYS[key]] = s.get(EVENT_KEYS[key], 0) + amount
+    else:
+        return []
+    unlocked = set(s["unlocked"])
+    newly = []
+    for bid, name, desc, test in BADGES:
+        if bid not in unlocked and test(s):
+            unlocked.add(bid)
+            newly.append((bid, name, desc))
+    s["unlocked"] = sorted(unlocked)
+    save_stats(s)
+    return newly

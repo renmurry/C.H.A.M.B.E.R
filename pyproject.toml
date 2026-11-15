@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chamber"
-version = "1.9.0"
-description = "Turn georeferenced (Geo)PDF map sheets into GIS layers"
+version = "2.0.0"
+description = "Turn map sheets, GeoPDFs and images into GIS layers"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -19,6 +19,8 @@ dependencies = [
   "tqdm>=4.66",
   "pyogrio>=0.8",
   "rapidocr-onnxruntime>=1.3",
+  "onnxruntime>=1.17",
+  "sounddevice>=0.4.6",
   "PySide6-Essentials>=6.7",
 ]
 

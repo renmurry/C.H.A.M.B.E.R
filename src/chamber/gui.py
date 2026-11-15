@@ -25,12 +25,25 @@ from PySide6.QtWidgets import (QApplication, QWidget, QMainWindow, QFrame, QLabe
 from . import __version__
 from .batch import run_batch
 from . import achievements as A
+from . import themes as TM
 
 APP = "C.H.A.M.B.E.R"
 CYAN = QColor(0, 229, 255)
 MAGENTA = QColor(255, 61, 154)
 TEXT = "#E8ECFF"
 MUTED = "#9AA3C7"
+
+
+def TH():
+    """The current theme (see themes.py)."""
+    return TM.current()
+
+
+def qc(hexstr, alpha=None):
+    c = QColor(hexstr)
+    if alpha is not None:
+        c.setAlpha(alpha)
+    return c
 DEBUG_CHOICES = [("Only for flagged sheets", "flagged"), ("All sheets", "all"), ("None", "none")]
 CRS_CHOICES = ["Auto (UTM zone per sheet)", "EPSG:4326 (lat/lon)", "EPSG:3857 (Web Mercator)", "Custom…"]
 
@@ -44,49 +57,22 @@ def _resource(rel):
     return os.path.normpath(os.path.join(here, "..", "..", rel))
 
 
-QSS = f"""
-* {{ color: {TEXT}; font-family: 'Segoe UI Variable', 'Segoe UI', 'Noto Sans', sans-serif; font-size: 10pt; }}
-QLabel#title {{ font-size: 17pt; font-weight: 700; letter-spacing: 3px; }}
-QLabel#subtitle, QLabel#muted {{ color: {MUTED}; }}
-QLabel#cardTitle {{ color: {MUTED}; font-size: 8.5pt; font-weight: 700; letter-spacing: 2px; }}
-QLabel#status {{ color: {TEXT}; font-size: 9.5pt; }}
-QFrame#card {{ background: rgba(255,255,255,16); border: 1px solid rgba(255,255,255,34); border-radius: 16px; }}
-QFrame#tabbar {{ background: rgba(0,0,0,60); border: 1px solid rgba(255,255,255,30); border-radius: 18px; }}
-QPushButton {{ background: rgba(255,255,255,20); border: 1px solid rgba(255,255,255,50);
-              border-radius: 11px; padding: 7px 16px; }}
-QPushButton:hover {{ border: 1px solid rgb(0,229,255); background: rgba(0,229,255,26); }}
-QPushButton:pressed {{ background: rgba(0,229,255,50); }}
-QPushButton:disabled {{ color: rgba(232,236,255,90); border: 1px solid rgba(255,255,255,22); background: rgba(255,255,255,8); }}
-QPushButton#tab {{ background: transparent; border: 1px solid transparent; border-radius: 14px; padding: 6px 18px; color: {MUTED}; font-weight: 600; }}
-QPushButton#tab:hover {{ color: {TEXT}; border: 1px solid rgba(0,229,255,90); }}
-QPushButton#tab:checked {{ color: rgb(0,229,255); border: 1px solid rgb(0,229,255); background: rgba(0,229,255,30); }}
-QPushButton#run {{ font-weight: 700; font-size: 11pt; padding: 9px 30px; color: #0B0D18; border: none;
-                  background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 rgb(0,229,255), stop:1 rgb(255,61,154)); }}
-QPushButton#run:hover {{ background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 rgb(120,245,255), stop:1 rgb(255,120,190)); }}
-QPushButton#run:disabled {{ color: rgba(11,13,24,140); background: qlineargradient(x1:0,y1:0,x2:1,y2:0, stop:0 rgba(0,229,255,90), stop:1 rgba(255,61,154,90)); }}
-QLineEdit, QComboBox, QSpinBox {{ background: rgba(0,0,0,70); border: 1px solid rgba(255,255,255,46);
-              border-radius: 10px; padding: 6px 10px; selection-background-color: rgba(0,229,255,120); }}
-QLineEdit:focus, QComboBox:focus, QSpinBox:focus {{ border: 1px solid rgb(0,229,255); }}
-QComboBox::drop-down {{ border: none; width: 22px; }}
-QComboBox QAbstractItemView {{ background: #151829; border: 1px solid rgba(0,229,255,120); selection-background-color: rgba(0,229,255,70); outline: none; }}
-QSpinBox::up-button, QSpinBox::down-button {{ width: 16px; border: none; background: transparent; }}
-QCheckBox {{ spacing: 8px; }}
-QCheckBox::indicator {{ width: 16px; height: 16px; border-radius: 5px; border: 1px solid rgba(255,255,255,90); background: rgba(0,0,0,60); }}
-QCheckBox::indicator:hover {{ border: 1px solid rgb(0,229,255); }}
-QCheckBox::indicator:checked {{ background: rgb(0,229,255); border: 1px solid rgb(0,229,255); }}
-QPlainTextEdit {{ background: rgba(0,0,0,80); border: 1px solid rgba(255,255,255,30); border-radius: 12px;
-                 padding: 6px; font-family: 'Cascadia Mono', Consolas, 'DejaVu Sans Mono', monospace; font-size: 9pt; }}
-QScrollBar:vertical {{ background: transparent; width: 8px; margin: 4px; }}
-QScrollBar::handle:vertical {{ background: rgba(255,255,255,60); border-radius: 3px; min-height: 24px; }}
-QScrollBar::handle:vertical:hover {{ background: rgb(0,229,255); }}
-QScrollBar::add-line, QScrollBar::sub-line {{ height: 0; }}
-QDialog {{ background: #12152A; }}
-"""
+def QSS():
+    return TM.qss()
 
 
-def glow(widget, color=CYAN, radius=24, alpha=170):
+
+def icon_for(name, size=22):
+    from .gui_icons import icon
+    return icon(name, TH().text, size)
+
+
+def glow(widget, color=None, radius=24, alpha=170):
+    if not TH().glow:                       # flat styles (Atlas): no glow
+        widget.setGraphicsEffect(None)
+        return None
     eff = QGraphicsDropShadowEffect(widget)
-    c = QColor(color); c.setAlpha(alpha)
+    c = QColor(color if color is not None else TH().accent); c.setAlpha(alpha if TH().dark else int(alpha * 0.7))
     eff.setColor(c); eff.setOffset(0, 0); eff.setBlurRadius(radius)
     widget.setGraphicsEffect(eff)
     return eff
@@ -257,7 +243,7 @@ class Stage(QWidget):
 
 
 # ---------------- the title: neon letters, click for the acronym ----------------
-SUBTITLE = "Georeferenced PDF maps to GIS layers"
+SUBTITLE = "Maps, sheets and images to GIS layers"
 ACRONYM = "Cartographic Harvester for Automated Map Batch Export & Reprojection"
 GLYPHS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&@$<>/\\"
 
@@ -324,7 +310,10 @@ class NeonTitle(QWidget):
             super().keyPressEvent(e)
 
     def trigger(self):
-        """Click: show the acronym, or (if it's showing) put the subtitle back."""
+        """Click: show the acronym, or (if it's showing) put the subtitle back.
+        The app also listens (on_trigger) to switch the look as the glitch lands."""
+        if callable(getattr(self, "on_trigger", None)):
+            self.on_trigger()
         if self.mode in ("sub", "decode_out", "glitch_out"):
             self._go("glitch_in")
         else:
@@ -386,14 +375,20 @@ class NeonTitle(QWidget):
         n = int(len(s) * p)
         return s[:n] + "".join(c if c == " " else self.rng.choice(GLYPHS) for c in s[n:])
 
-    def _neon_char(self, p, x, base, ch, font, strength, core=QColor(TEXT)):
+    def _neon_char(self, p, x, base, ch, font, strength, core=None):
+        core = QColor(core if core is not None else TH().text)
         path = QPainterPath(); path.addText(QPointF(x, base), font, ch)
         if strength > 0.01:
-            for w, a in ((9, 26), (6, 50), (3, 110)):
-                c = QColor(CYAN); c.setAlpha(int(a * strength))
-                p.strokePath(path, QPen(c, w, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-            lit = QColor(core)
-            lit = QColor(int(lit.red() + (180 - lit.red()) * strength), int(lit.green() + (250 - lit.green()) * strength), 255)
+            if TH().glow:
+                for w, a in ((9, 26), (6, 50), (3, 110)):
+                    c = QColor(TH().accent); c.setAlpha(int(a * strength * (1 if TH().dark else 0.8)))
+                    p.strokePath(path, QPen(c, w, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            if TH().dark:
+                lit = QColor(int(core.red() + (180 - core.red()) * strength), int(core.green() + (250 - core.green()) * strength), 255)
+            else:
+                a = QColor(TH().accent)
+                lit = QColor(int(core.red() + (a.red() - core.red()) * strength), int(core.green() + (a.green() - core.green()) * strength),
+                             int(core.blue() + (a.blue() - core.blue()) * strength))
             p.fillPath(path, lit)
         else:
             p.fillPath(path, core)
@@ -415,7 +410,7 @@ class NeonTitle(QWidget):
                 draw = self.rng.choice(GLYPHS[:36])
             if glitch:
                 dx = self.rng.uniform(-4, 4) * amt
-                for col, off in ((CYAN, -3), (MAGENTA, 3)):           # colour split
+                for col, off in ((TH().accent, -3), (TH().accent2, 3)):   # colour split
                     c = QColor(col); c.setAlpha(170)
                     path = QPainterPath(); path.addText(QPointF(x + dx + off * amt, base), self.f_title, draw)
                     p.fillPath(path, c)
@@ -424,7 +419,7 @@ class NeonTitle(QWidget):
         if glitch:                                                    # slice tears
             for _ in range(3):
                 y = self.rng.uniform(4, fm.height())
-                c = QColor(CYAN if self.rng.random() < 0.5 else MAGENTA); c.setAlpha(int(140 * amt))
+                c = QColor(TH().accent if self.rng.random() < 0.5 else TH().accent2); c.setAlpha(int(140 * amt))
                 p.fillRect(QRectF(self.rng.uniform(0, x * 0.6), y, self.rng.uniform(20, 90), 2), c)
         # second line
         text, is_acr = self._sub_text()
@@ -439,7 +434,7 @@ class NeonTitle(QWidget):
                 x += QFontMetricsF(f).horizontalAdvance(ch)
             else:
                 path = QPainterPath(); path.addText(QPointF(x, y2), self.f_sub, ch)
-                p.fillPath(path, QColor(MUTED) if not is_acr else QColor(TEXT))
+                p.fillPath(path, QColor(TH().muted) if not is_acr else QColor(TH().text))
                 x += fs.horizontalAdvance(ch)
         p.end()
 
@@ -466,14 +461,15 @@ class NeonBar(QWidget):
         w, h = self.width(), self.height()
         bar = QRectF(6, h / 2 - 4, w - 12, 8)
         p.setPen(Qt.NoPen)
-        p.setBrush(QColor(255, 255, 255, 34)); p.drawRoundedRect(bar, 4, 4)
+        p.setBrush(QColor(255, 255, 255, 34) if TH().dark else QColor(31, 41, 51, 28)); p.drawRoundedRect(bar, 4, 4)
         if self._v > 0:
             fill = QRectF(bar.x(), bar.y(), bar.width() * self._v, bar.height())
-            for i, a in ((9, 20), (6, 36), (3, 70)):               # the neon glow
-                p.setBrush(QColor(0, 229, 255, a))
-                p.drawRoundedRect(fill.adjusted(-i, -i, i, i), 4 + i, 4 + i)
+            if TH().glow:
+                for i, a in ((9, 20), (6, 36), (3, 70)):           # the neon glow
+                    p.setBrush(qc(TH().accent, a))
+                    p.drawRoundedRect(fill.adjusted(-i, -i, i, i), 4 + i, 4 + i)
             g = QLinearGradient(fill.topLeft(), fill.topRight())
-            g.setColorAt(0, CYAN); g.setColorAt(1, MAGENTA if self._v > 0.98 else QColor(120, 245, 255))
+            g.setColorAt(0, qc(TH().accent)); g.setColorAt(1, qc(TH().accent2) if self._v > 0.98 else qc(TH().accent).lighter(130))
             p.setBrush(g); p.drawRoundedRect(fill, 4, 4)
             if self._v < 1:                                         # a moving shine
                 sx = fill.x() + fill.width() * self._shine
@@ -505,15 +501,18 @@ class Backdrop(QWidget):
     def paintEvent(self, _):
         p = QPainter(self); p.setRenderHint(QPainter.Antialiasing)
         r = self.rect()
-        if self.glass:
-            p.fillRect(r, QColor(10, 12, 24, 120))
+        t = TH()
+        if self.glass and t.blur_ok:
+            p.fillRect(r, QColor(*t.tint))
         else:
             g = QLinearGradient(0, 0, r.width(), r.height())
-            g.setColorAt(0, QColor(13, 15, 30)); g.setColorAt(1, QColor(22, 18, 40))
+            g.setColorAt(0, QColor(t.backdrop[0])); g.setColorAt(1, QColor(t.backdrop[1]))
             p.fillRect(r, g)
-            for (fx, fy, fr, c) in ((0.1, 0.05, 0.55, QColor(0, 229, 255, 40)),
-                                    (0.95, 0.9, 0.6, QColor(255, 61, 154, 38)),
-                                    (0.9, 0.1, 0.4, QColor(120, 80, 255, 30))):
+            blobs = (((0.1, 0.05, 0.55, QColor(0, 229, 255, 40)), (0.95, 0.9, 0.6, QColor(255, 61, 154, 38)),
+                      (0.9, 0.1, 0.4, QColor(120, 80, 255, 30))) if t.key == "midnight" else
+                     ((0.15, 0.1, 0.6, QColor(255, 255, 255, 120)), (0.9, 0.95, 0.6, QColor(159, 211, 234, 70)))
+                     if t.key == "frost" else ())
+            for (fx, fy, fr, c) in blobs:
                 rg = QRadialGradient(QPointF(r.width() * fx, r.height() * fy), r.width() * fr)
                 rg.setColorAt(0, c); rg.setColorAt(1, QColor(0, 0, 0, 0))
                 p.fillRect(r, rg)
@@ -528,8 +527,8 @@ class App(QMainWindow):
         ico = _resource("assets/app.ico")
         if os.path.exists(ico):
             self.setWindowIcon(QIcon(ico))
-        self.resize(920, 820)
-        self.setMinimumSize(780, 700)
+        self.resize(1320, 880)
+        self.setMinimumSize(980, 700)
         self.glass = self._want_glass()
         if self.glass:
             self.setAttribute(Qt.WA_TranslucentBackground)
@@ -541,6 +540,8 @@ class App(QMainWindow):
         self.worker = None
         self._build()
         self._load_settings()
+        self._init_look()
+        self._init_sound()
 
     # ---------- glass ----------
     def _want_glass(self):
@@ -583,26 +584,139 @@ class App(QMainWindow):
         self.tabs = QButtonGroup(self); self.tabs.setExclusive(True)
         self.pages = QStackedWidget()
         self._tab_glow = {}
-        for i, name in enumerate(("Run", "Settings", "Badges")):
+        for i, name in enumerate(("Run", "Extract", "Settings", "Badges")):
             b = QPushButton(name); b.setObjectName("tab"); b.setCheckable(True)
             b.setCursor(Qt.PointingHandCursor)
             self.tabs.addButton(b, i); bl.addWidget(b)
         self.tabs.idToggled.connect(self._tab_changed)
+        from PySide6.QtWidgets import QToolButton
+        self.sound_btn = QToolButton(); self.sound_btn.setObjectName("tool"); self.sound_btn.setCursor(Qt.PointingHandCursor)
+        self.sound_btn.setIconSize(QSize(22, 22)); self.sound_btn.clicked.connect(self._cycle_sound)
+        head.addWidget(self.sound_btn)
         head.addWidget(bar)
         outer.addLayout(head)
         outer.addWidget(self.pages, 1)
 
         self.pages.addWidget(self._run_page())
+        from .gui_extract import ExtractPage
+        self.extract = ExtractPage(self.settings)
+        self.extract.toast.connect(self.show_toast)
+        self.extract.stat.connect(self._extract_stat)
+        self.extract.pendingChanged.connect(self._pending_changed)
+        self.pages.addWidget(self.extract)
         self.pages.addWidget(self._settings_page())
         self.pages.addWidget(self._badges_page())
         self.tabs.button(0).setChecked(True)
+
+    # ---------- sound ----------
+    TRACK_KEYS = ["lanterns", "static", "ember", "sunshine", "contours", "shuffle"]
+    SOUND_TIPS = {"off": "Sound off (click: effects)", "fx": "Effects on (click: effects + music)",
+                  "all": "Effects + music (click: off)"}
+
+    def _init_sound(self):
+        from .audio import Audio, MODES
+        self.audio = Audio()
+        s = self.settings
+        self.track_cb.setCurrentIndex(min(s.value("track", 0, type=int), len(self.TRACK_KEYS) - 1))
+        self.music_vol.setValue(s.value("music_vol", 55, type=int)); self.fx_vol.setValue(s.value("fx_vol", 80, type=int))
+        self.audio.track_key = self.TRACK_KEYS[self.track_cb.currentIndex()]
+        self.audio.set_volumes(self.music_vol.value() / 100, self.fx_vol.value() / 100)
+        self.track_cb.currentIndexChanged.connect(lambda i: (self.settings.setValue("track", i), self.audio.set_track(self.TRACK_KEYS[i])))
+        self.music_vol.valueChanged.connect(lambda v: (self.settings.setValue("music_vol", v), self.audio.set_volumes(music=v / 100)))
+        self.fx_vol.valueChanged.connect(lambda v: (self.settings.setValue("fx_vol", v), self.audio.set_volumes(fx=v / 100)))
+        self.extract.sound.connect(self.audio.play)
+        self._set_sound(s.value("sound_mode", "off", type=str), announce=False)
+
+    def _cycle_sound(self):
+        from .audio import MODES
+        self._set_sound(MODES[(MODES.index(self.audio.mode) + 1) % len(MODES)])
+
+    def _set_sound(self, mode, announce=True):
+        self.audio.set_mode(mode)
+        if mode != "off" and not self.audio.available:
+            self.audio.mode = "off"
+            if announce:
+                self.show_toast("No sound device found")
+        self.settings.setValue("sound_mode", self.audio.mode)
+        self.sound_btn.setIcon(icon_for("sound_" + self.audio.mode))
+        self.sound_btn.setToolTip(self.SOUND_TIPS[self.audio.mode])
+        self.sound_btn.setAccessibleName(self.SOUND_TIPS[self.audio.mode])
+        if announce and self.audio.mode != "off":
+            self.audio.play("tick")
+            if self.audio.mode == "all":
+                self.show_toast("♪ " + self.track_cb.currentText().split(" (")[0])
+
+    # ---------- looks ----------
+    def _init_look(self):
+        self.toast_w = Toast(self.centralWidget())
+        self._layout_wait = None
+        self.look = self.settings.value("look", 1, type=int) % len(TM.LOOKS)
+        self.title_w.on_trigger = self._title_clicked
+        self.apply_look(self.look, announce=False)
+
+    def _title_clicked(self):
+        # switch while the glitch is at its wildest, so the change hides inside it
+        QTimer.singleShot(int(NeonTitle.GLITCH_IN * 500), self._next_look)
+
+    def _next_look(self):
+        if hasattr(self, "audio"):
+            self.audio.play("glitch")
+        order = self.settings.value("look_order", "random", type=str)
+        self.apply_look(TM.next_look(self.look, order=order))
+
+    def apply_look(self, idx, announce=True):
+        theme, layout, name = TM.LOOKS[idx]
+        self.look = idx
+        TM.set_look(theme, layout)
+        QApplication.instance().setStyleSheet(QSS())
+        self.centralWidget().update()
+        for i in range(self.tabs.buttons().__len__()):
+            b = self.tabs.button(i)
+            if b.isChecked():
+                glow(b, None, 22, 200)
+        self._run_glow = glow(self.run_btn, qc(TH().accent2), 28, 150)
+        self.title_w.update(); self.bar.update()
+        self.extract.restyle()
+        if hasattr(self, "sound_btn") and hasattr(self, "audio"):
+            self.sound_btn.setIcon(icon_for("sound_" + self.audio.mode))
+        if self.extract.has_pending() and layout != self.extract.layout_mode:
+            self._layout_wait = layout
+            if announce:
+                self.show_toast(f"{name}  ·  layout changes once you keep or drop")
+        else:
+            self._layout_wait = None
+            self.extract.set_layout(layout)
+            if announce:
+                self.show_toast(name)
+        self.settings.setValue("look", idx)
+        if self.pages.currentIndex() == 3:
+            self._refresh_badges()
+        self._extract_stat(f"look:{idx}", 1)
+
+    def _pending_changed(self, busy):
+        if not busy and self._layout_wait and not self.extract.has_pending():
+            lay, self._layout_wait = self._layout_wait, None
+            self.extract.set_layout(lay)
+
+    def _extract_stat(self, key, amount):
+        try:
+            newly = A.record_event(key, amount)
+        except Exception:
+            newly = []
+        for _bid, name, desc in newly:
+            self.show_toast(f"✦ Badge unlocked: {name}")
+            if hasattr(self, "audio"):
+                self.audio.play("badge")
+
+    def show_toast(self, text):
+        self.toast_w.show_text(text)
 
     def _tab_changed(self, idx, on):
         b = self.tabs.button(idx)
         if on:
             self.pages.setCurrentIndex(idx)
-            glow(b, CYAN, 22, 200)
-            if idx == 2:
+            glow(b, None, 22, 200)
+            if idx == 3:
                 self._refresh_badges()
         else:
             b.setGraphicsEffect(None)
@@ -636,7 +750,7 @@ class App(QMainWindow):
         self.open_btn.setEnabled(False)
         self.run_btn = QPushButton("Run"); self.run_btn.setObjectName("run")
         self.run_btn.setCursor(Qt.PointingHandCursor); self.run_btn.clicked.connect(self._run)
-        self._run_glow = glow(self.run_btn, MAGENTA, 28, 150)
+        self._run_glow = glow(self.run_btn, qc(TH().accent2), 28, 150)
         for b in (self.clear_btn, self.open_btn, self.run_btn):
             row.addWidget(b)
         cl.addLayout(row)
@@ -688,6 +802,22 @@ class App(QMainWindow):
         g.setColumnStretch(2, 1)
         cl.addLayout(g); lay.addWidget(c)
 
+        c, cl = card("Sound")
+        g = QGridLayout(); g.setHorizontalSpacing(14); g.setVerticalSpacing(10)
+        from PySide6.QtWidgets import QSlider
+        l = QLabel("Music"); l.setObjectName("muted"); g.addWidget(l, 0, 0)
+        self.track_cb = QComboBox(); self.track_cb.addItems(["Paper Lanterns (bright synth-pop)", "Static Hearts (piano + heavy guitars)",
+                                                             "Ember Hours (lofi piano)", "Pocket Sunshine (lively stride piano)",
+                                                             "Contours (the long one, seven parts)", "Shuffle all five"])
+        g.addWidget(self.track_cb, 0, 1)
+        l = QLabel("Music volume"); l.setObjectName("muted"); g.addWidget(l, 1, 0)
+        self.music_vol = QSlider(Qt.Horizontal); self.music_vol.setRange(0, 100); g.addWidget(self.music_vol, 1, 1)
+        l = QLabel("Effects volume"); l.setObjectName("muted"); g.addWidget(l, 2, 0)
+        self.fx_vol = QSlider(Qt.Horizontal); self.fx_vol.setRange(0, 100); g.addWidget(self.fx_vol, 2, 1)
+        h = QLabel("The speaker button at the top switches between: off, effects, effects + music."); h.setObjectName("muted")
+        g.addWidget(h, 3, 0, 1, 2); g.setColumnStretch(1, 1)
+        cl.addLayout(g); lay.addWidget(c)
+
         c, cl = card("Look")
         self.glass_cb = QCheckBox("Glass blur behind the window (Windows; takes effect next start)")
         self.glass_cb.setChecked(self.settings.value("glass", True, type=bool))
@@ -719,11 +849,11 @@ class App(QMainWindow):
             f = QFrame(); f.setObjectName("card")
             fl = QVBoxLayout(f); fl.setContentsMargins(14, 10, 14, 10)
             n = QLabel(("✦ " if got else "○ ") + name)
-            n.setStyleSheet(f"font-weight:700; color:{'#00E5FF' if got else MUTED};")
+            n.setStyleSheet(f"font-weight:700; color:{TH().accent if got else TH().muted};")
             d = QLabel(desc); d.setObjectName("muted"); d.setWordWrap(True)
             fl.addWidget(n); fl.addWidget(d)
             if got:
-                glow(f, CYAN, 22, 120)
+                glow(f, None, 22, 120)
             self._badge_grid.addWidget(f, i // 2, i % 2)
 
     # ---------- settings persistence ----------
@@ -753,6 +883,8 @@ class App(QMainWindow):
 
     def closeEvent(self, e):
         self._save_settings()
+        if hasattr(self, "audio"):
+            self.audio.shutdown()
         super().closeEvent(e)
 
     # ---------- helpers ----------
@@ -775,7 +907,8 @@ class App(QMainWindow):
         return CRS_CHOICES[i].split(":")[1].split(" ")[0]
 
     def _log(self, msg, kind=None):
-        color = {"ok": "#5CFFB0", "flag": "#FFC857", "fail": "#FF5C8A", "head": "#00E5FF"}.get(kind, TEXT)
+        t = TH()
+        color = {"ok": t.ok, "flag": t.flag, "fail": t.fail, "head": t.accent}.get(kind, t.text)
         weight = "700" if kind == "head" else "400"
         safe = (msg.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
                 .replace("\n", "<br>").replace("  ", "&nbsp;&nbsp;"))
@@ -871,6 +1004,8 @@ class App(QMainWindow):
         self.bar.set_value(1.0); self.stage.finish()
         self.status.setText("Good dog! All done." if clean else "Done. A few sheets to review.")
         self._busy(False)
+        if hasattr(self, "audio"):
+            self.audio.play("combo" if clean else "drop")
         try:
             _, newly = A.record_run(s, getattr(self, "_last_formats", []))
         except Exception:
@@ -882,6 +1017,34 @@ class App(QMainWindow):
         self.stage.show_rest(); self.status.setText("Something went wrong. See the log.")
         self._busy(False)
         QMessageBox.critical(self, APP, "Something went wrong. See the log.")
+
+
+class Toast(QLabel):
+    """A short message at the top of the window that fades away."""
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setAlignment(Qt.AlignCenter)
+        self.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.hide()
+        self._t = QTimer(self); self._t.timeout.connect(self._tick)
+        self._life = 0
+
+    def show_text(self, text):
+        t = TH()
+        bg = "rgba(10,16,26,225)" if t.dark else ("rgba(250,251,252,235)" if t.key == "frost" else "#fbfaf6")
+        self.setStyleSheet(f"QLabel {{ background: {bg}; color: {t.text}; border: 1px solid {t.accent};"
+                           f" border-radius: {max(t.btn_radius, 8)}px; padding: 10px 22px; font-weight: 600; font-size: 11pt; }}")
+        self.setText(text); self.adjustSize()
+        pw = self.parentWidget().width()
+        self.move((pw - self.width()) // 2, 70)
+        self.setWindowOpacity(1.0); self.show(); self.raise_()
+        self._life = 70; self._t.start(30)
+
+    def _tick(self):
+        self._life -= 1
+        if self._life <= 0:
+            self._t.stop(); self.hide()
 
 
 class Confetti(QWidget):
@@ -917,11 +1080,11 @@ class Finished(QDialog):
         super().__init__(app)
         self.app = app
         self.setWindowTitle(APP); self.setModal(True); self.setMinimumWidth(440)
-        self.setStyleSheet(QSS)
+        self.setStyleSheet(QSS())
         clean = s["failed"] == 0 and s["flagged"] == 0 and s["ok"] > 0
         head = "All done!" if clean else ("Done — a few to review" if not s["failed"] else "Run complete")
         lay = QVBoxLayout(self); lay.setContentsMargins(24, 18, 24, 18); lay.setSpacing(6)
-        h = QLabel(head); h.setStyleSheet("font-size:17pt; font-weight:700; color:#00E5FF;")
+        h = QLabel(head); h.setStyleSheet(f"font-size:17pt; font-weight:700; color:{TH().accent};")
         h.setAlignment(Qt.AlignCenter); lay.addWidget(h)
         n = QLabel(f"{s['ok']} ok     {s['flagged']} flagged     {s['failed']} failed")
         n.setAlignment(Qt.AlignCenter); lay.addWidget(n)
@@ -931,7 +1094,7 @@ class Finished(QDialog):
         if newly:
             c, cl = card("Achievement unlocked")
             for _bid, name, desc in newly:
-                r = QLabel(f"✦ {name}  —  {desc}"); r.setStyleSheet("color:#00E5FF; font-weight:600;")
+                r = QLabel(f"✦ {name}  —  {desc}"); r.setStyleSheet(f"color:{TH().accent}; font-weight:600;")
                 cl.addWidget(r)
             lay.addWidget(c)
         row = QHBoxLayout(); row.addStretch(1)
@@ -945,7 +1108,7 @@ def main():
         QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication.instance() or QApplication(sys.argv)
     app.setApplicationName("CHAMBER")
-    app.setStyleSheet(QSS)
+    app.setStyleSheet(QSS())
     w = App(); w.show()
     return app.exec()
 

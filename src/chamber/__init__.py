@@ -1,2 +1,2 @@
-"""chamber: turn georeferenced PDF map sheets into GIS layers."""
-__version__ = "1.9.0"
+"""chamber: turn map sheets, GeoPDFs and images into GIS layers."""
+__version__ = "2.0.0"

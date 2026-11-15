@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.0.0 - "Shape Shifter"
+- New **Extract** tab: open a PDF, GeoTIFF, JPG or PNG (several at once) and
+  click features off it.
+  - **Area click / Box**: a roof, tree or pond outlined from one click or a box;
+    Shift+click adds, Ctrl+click cuts, Tab shows another size. Runs offline on
+    the CPU (MobileSAM, converted to ONNX).
+  - **Snap line**: roads and streams that follow the image between your clicks.
+  - **Road Brush** and **Paint the Map Red**: paint roads (and, in red, what
+    isn't road; a closed red loop fills) and it learns what roads look like on
+    that image, then **Find roads** traces a network: centrelines joined at
+    junctions plus road surfaces, with width measured from the image or fixed
+    to the brush (`width_m`).
+  - **Find similar**: keep a few of a kind and it looks for more, in one area,
+    the whole image or every open file; each one comes up for keep or drop.
+  - **Drawn in this PDF**: lines and shapes drawn inside a PDF, grouped by colour
+    and width, taken in one go (exact).
+  - **Read text**: map text as points.
+  - **Square up outlines** for buildings; undo / redo; area and length shown.
+  - **Remove / Remove all** to take files off the list (never deletes from disk),
+    with a check for unexported work.
+  - **Export**: GeoPackage, Shapefile, GeoJSON, KML (with attributes), DXF.
+- **Placing a map** now also works without GeoPDF tags: from a GeoTIFF or world
+  file, or from the **grid labels printed around the map** (with the fit error
+  shown). Maps that can't be placed are worked in pixel units.
+- **Six looks**: click the title. Frost, Midnight and Atlas, each with side
+  panels or floating ones (Focus). The layout waits while a feature is waiting
+  for keep / drop. Midnight is the v1.9 look.
+- **Sound** (off by default; speaker button at the top): effects for keep, drop,
+  combos, look-alikes and badges, and five original music loops, *Paper
+  Lanterns*, *Static Hearts*, *Ember Hours* (lofi piano), *Pocket Sunshine*
+  (lively stride piano) and *Contours* (three minutes, seven parts), synthesised
+  from code, with track and volume in Settings.
+- **Livelier Extract screen**: kept features pulse, a combo counter for keeps in
+  a row, a scan line over the area the model is reading, and an animated
+  contour-line welcome screen.
+- New badges: First Outline, Tree Hugger, Road Runner, Copycat, Gridlock, Paint
+  the Town Red and Shape Shifter.
+
 ## 1.9.0 - "Fetch"
 - New desktop app, rebuilt with Qt: frosted-glass panels (real blur behind the
   window on Windows, a dark glass look elsewhere), neon highlights, and three

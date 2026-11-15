@@ -4,7 +4,7 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 datas, binaries, hiddenimports = [], [], []
 for pkg in ['rasterio', 'pyproj', 'shapely', 'cv2', 'fitz', 'pikepdf', 'pyogrio',
-            'rapidocr_onnxruntime', 'onnxruntime']:
+            'rapidocr_onnxruntime', 'onnxruntime', 'sounddevice', '_sounddevice_data']:
     try:
         d, b, h = collect_all(pkg)
         datas += d; binaries += b; hiddenimports += h
@@ -20,7 +20,9 @@ datas += [('assets/app.ico', 'assets'),
           ('assets/logo_64.png', 'assets'),
           ('assets/logo.png', 'assets'),
           ('assets/logo_512.png', 'assets'),
-          ('assets/anim', 'assets/anim')]          # the stage animation clips
+          ('assets/anim', 'assets/anim'),          # the stage animation clips
+          ('assets/models', 'assets/models')]      # the outline model (Extract screen)
+hiddenimports += ['PySide6.QtSvg']
 
 a = Analysis(['app.py'], pathex=['src'], binaries=binaries, datas=datas,
              hiddenimports=hiddenimports, hookspath=[], hooksconfig={},

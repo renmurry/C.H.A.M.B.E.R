@@ -4,8 +4,9 @@ Plain-language version for anyone who asks "is this safe to run on our data?"
 Short answer: yes, because it never leaves your computer. Here's the longer one.
 
 ## How it runs
-It's an offline desktop tool. It opens PDFs and writes files in a folder you
-pick. That's it. No internet connection, no open ports, no accounts to log into,
+It's an offline desktop tool. It opens PDFs and images and writes files in a
+folder you pick. The Extract screen's outline model and the OCR both run on
+your own CPU from files inside the app. That's it. No internet connection, no open ports, no accounts to log into,
 nothing uploaded anywhere, no usage tracking. If you unplugged the network cable
 it would work exactly the same.
 
