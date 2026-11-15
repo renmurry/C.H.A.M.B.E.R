@@ -2,7 +2,7 @@
 ; Build first with build_all.bat (creates both exes in dist\), then compile this.
 
 #define MyAppName "C.H.A.M.B.E.R"
-#define MyAppVersion "2.0.0"
+#define MyAppVersion "2.0.1"
 #define MyAppPublisher "Ren"
 #define MyAppExe "CHAMBER.exe"
 #define MyCliExe "CHAMBER-CLI.exe"

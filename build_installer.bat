@@ -32,7 +32,7 @@ echo Using: !ISCC!
 echo.
 echo ============================================
 echo   DONE.  Installer is in:  installer_output\
-echo   (CHAMBER-Setup-2.0.0.exe)
+echo   (CHAMBER-Setup-2.0.1.exe)
 echo ============================================
 echo.
 pause

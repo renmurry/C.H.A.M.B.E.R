@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1
+- First downloadable release of 2.0: `CHAMBER.exe` and `CHAMBER-CLI.exe`
+  are attached to the GitHub Release. No feature changes from 2.0.0.
+
 ## 2.0.0 - "Shape Shifter"
 - New **Extract** tab: open a PDF, GeoTIFF, JPG or PNG (several at once) and
   click features off it.
